@@ -1,5 +1,3 @@
-
-
 <h1 align="center">PortLLM</h1>
 
 <p align="center">
@@ -336,5 +334,6 @@ Run inference on your powerful desktop and access the chat from any device on yo
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-#   P O R T - L L M -  
+#   P O R T - L L M - 
+ 
  
