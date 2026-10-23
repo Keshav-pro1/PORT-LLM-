@@ -11,8 +11,6 @@
   <img src="https://img.shields.io/badge/Models-GGUF%20Quantized-orange?style=flat-square" alt="Models" />
 </p>
 
----
-
 ## Table of Contents
 
 | Section | Description |
