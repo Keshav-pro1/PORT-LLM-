@@ -54,10 +54,23 @@ LOG_MODE_ERRORS_ONLY = "errors_only"
 LOG_MODE_ALL = "all"
 DEFAULT_LOG_MODE = LOG_MODE_ERRORS_ONLY
 
+
 # Lock shared file persistence paths to avoid concurrent write corruption.
 DATA_FILE_LOCK = threading.RLock()
 LOG_MODE_LOCK = threading.RLock()
 ACTIVE_LOG_MODE = DEFAULT_LOG_MODE
+
+# Hindsight Cortex Persistent Memory Integration
+try:
+    _cortex_scripts_dir = os.path.join(SCRIPT_DIR, "scripts")
+    if _cortex_scripts_dir not in sys.path:
+        sys.path.insert(0, _cortex_scripts_dir)
+    from hindsight_client import HindsightClient
+    HINDSIGHT_CONFIG_FILE = os.path.join(SCRIPT_DIR, "config", "hindsight_config.json")
+    cortex_client = HindsightClient(config_path=HINDSIGHT_CONFIG_FILE)
+except Exception as _e:
+    cortex_client = None
+
 
 # ── Pure-Python Hardware Stats (no psutil needed) ──────────────
 _cpu_times_last = None  # (idle, total) from previous sample
@@ -447,6 +460,7 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Access-Control-Expose-Headers", "X-Cortex-Memories-Used")
 
     def do_OPTIONS(self):
         """Handle CORS preflight."""
@@ -474,6 +488,16 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
         elif path == "/api/stats":
             self._get_stats()
 
+        # Cortex Persistent Memory API
+        elif path == "/api/cortex/status":
+            self._cortex_get_status()
+
+        elif path == "/api/cortex/memories":
+            self._cortex_get_memories()
+
+        elif path == "/api/cortex/profile":
+            self._cortex_get_profile()
+
         # Proxy Ollama API
         elif path.startswith("/ollama/"):
             self._proxy_ollama("GET")
@@ -490,6 +514,13 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
 
         elif path == "/api/settings":
             self._save_settings()
+
+        # Cortex Persistent Memory API
+        elif path == "/api/cortex/user":
+            self._cortex_set_user()
+
+        elif path == "/api/cortex/retain":
+            self._cortex_retain()
 
         # Proxy Ollama API
         elif path.startswith("/ollama/"):
@@ -510,6 +541,71 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
 
     # ── Serve HTML ─────────────────────────────────────────────
+    # ── Cortex API Handlers ─────────────────────────────────────────
+    def _send_json_response(self, data_dict, status=200):
+        out = json.dumps(data_dict).encode("utf-8")
+        self.send_response(status)
+        self.send_header("Content-Type", "application/json")
+        self._cors_headers()
+        self.end_headers()
+        self.wfile.write(out)
+
+    def _cortex_get_status(self):
+        if not cortex_client:
+            self._send_json_response({"enabled": False, "status": "unavailable"})
+            return
+        self._send_json_response(cortex_client.get_status())
+
+    def _cortex_get_memories(self):
+        if not cortex_client or not cortex_client.enabled:
+            self._send_json_response({"memories": []})
+            return
+        memories = cortex_client.list_memories()
+        self._send_json_response({"memories": memories, "bank_id": cortex_client.bank_id})
+
+    def _cortex_get_profile(self):
+        if not cortex_client or not cortex_client.enabled:
+            self._send_json_response({"profile": ""})
+            return
+        profile = cortex_client.reflect("Synthesize what is known about this user, their role, stack, and preferences.")
+        self._send_json_response({"profile": profile, "bank_id": cortex_client.bank_id})
+
+    def _cortex_set_user(self):
+        if not cortex_client:
+            self._send_json_response({"error": "Cortex disabled"}, 400)
+            return
+        body = self._read_body()
+        try:
+            data = json.loads(body) if body else {}
+        except Exception:
+            data = {}
+        user_id = data.get("user_id", "").strip()
+        if not user_id:
+            self._send_json_response({"error": "user_id is required"}, 400)
+            return
+        cortex_client.update_user(user_id)
+        self._send_json_response({
+            "success": True,
+            "user_id": cortex_client.user_id,
+            "bank_id": cortex_client.bank_id
+        })
+
+    def _cortex_retain(self):
+        if not cortex_client or not cortex_client.enabled:
+            self._send_json_response({"error": "Cortex disabled"}, 400)
+            return
+        body = self._read_body()
+        try:
+            data = json.loads(body) if body else {}
+        except Exception:
+            data = {}
+        content = data.get("content", "").strip()
+        if not content:
+            self._send_json_response({"error": "content is required"}, 400)
+            return
+        res = cortex_client.retain(content, metadata={"manual": True})
+        self._send_json_response({"success": True, "result": res})
+
     def _serve_html(self):
         try:
             with open(HTML_FILE, "rb") as f:
@@ -720,6 +816,40 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
                     self.wfile.write(json.dumps({"error": "Missing or empty messages field"}).encode())
                     return
 
+            memories_used_count = 0
+            last_user_prompt = ""
+            if method == "POST" and ollama_path == "/api/chat":
+                # Extract last user message
+                for m in reversed(messages):
+                    if isinstance(m, dict) and m.get("role") == "user":
+                        last_user_prompt = str(m.get("content", "")).strip()
+                        break
+
+                # Memory Recall Pre-Prompt Interceptor
+                if cortex_client and cortex_client.enabled and last_user_prompt:
+                    try:
+                        recalled_memories = cortex_client.recall(last_user_prompt)
+                        if recalled_memories:
+                            memories_used_count = len(recalled_memories)
+                            memory_block = (
+                                "\n\n[HINDSIGHT LONG-TERM MEMORY]\n"
+                                "The following context was recalled from previous interactions with this user:\n"
+                                + "\n".join(f"- {mem}" for mem in recalled_memories)
+                                + "\n[END MEMORY]\n"
+                            )
+                            sys_msg = next((m for m in messages if isinstance(m, dict) and m.get("role") == "system"), None)
+                            if sys_msg:
+                                sys_msg["content"] = str(sys_msg.get("content", "")) + memory_block
+                            else:
+                                messages.insert(0, {
+                                    "role": "system",
+                                    "content": "You are PortLLM Cortex, an intelligent assistant equipped with persistent long-term memory." + memory_block
+                                })
+                            payload["messages"] = messages
+                            body = json.dumps(payload).encode("utf-8")
+                    except Exception as _mem_err:
+                        _log_event(logging.WARNING, f"Cortex memory recall failed: {_mem_err}", request_context=request_context)
+
             # Handle fake /api/tags for llama.cpp mode
             if LLAMA_CPP_MODE and ollama_path == "/api/tags":
                 self.send_response(200)
@@ -762,6 +892,7 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
                 if lower not in ("transfer-encoding", "connection", "content-length"):
                     self.send_header(header, value)
 
+            self.send_header("X-Cortex-Memories-Used", str(memories_used_count))
             self._cors_headers()
             self.end_headers()
             if method == "POST" and ("/api/chat" in ollama_path or "/api/generate" in ollama_path):
@@ -772,6 +903,7 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
                 )
 
             # Stream the response in chunks
+            accumulated_assistant_reply = []
             while True:
                 chunk = response.read(4096)
                 if not chunk:
@@ -808,6 +940,23 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
                             except:
                                 pass
                 else:
+                    # Accumulate text for background memory retention
+                    if last_user_prompt and chunk:
+                        try:
+                            chunk_text = chunk.decode("utf-8", errors="ignore")
+                            for line in chunk_text.splitlines():
+                                line_clean = line.strip()
+                                if line_clean:
+                                    try:
+                                        jpart = json.loads(line_clean)
+                                        delta = jpart.get("message", {}).get("content", "") or jpart.get("response", "")
+                                        if delta:
+                                            accumulated_assistant_reply.append(delta)
+                                    except Exception:
+                                        pass
+                        except Exception:
+                            pass
+
                     try:
                         self.wfile.write(chunk)
                         if is_stream:
@@ -820,6 +969,18 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
                             exc_info=True,
                         )
                         return
+
+            # Background Retain: Store conversation in active user memory bank
+            if cortex_client and cortex_client.enabled and cortex_client.auto_retain and last_user_prompt:
+                full_reply = "".join(accumulated_assistant_reply).strip()
+                if full_reply:
+                    def _bg_retain(u_prompt, a_reply):
+                        try:
+                            summary = f"User asked: {u_prompt}\nAssistant replied: {a_reply[:1200]}"
+                            cortex_client.retain(summary, metadata={"type": "chat_turn"})
+                        except Exception as _r_err:
+                            pass
+                    threading.Thread(target=_bg_retain, args=(last_user_prompt, full_reply), daemon=True).start()
 
         except urllib.error.HTTPError as e:
             _log_event(
