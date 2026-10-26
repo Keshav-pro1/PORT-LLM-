@@ -1871,6 +1871,247 @@
         z-index: 10;
       }
 
+
+      /* ━━━ Cortex Persistent Memory Styles ━━━ */
+      .cortex-bar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg2, rgba(255, 255, 255, 0.05));
+        border: 1px solid var(--b1, rgba(255, 255, 255, 0.12));
+        padding: 4px 10px;
+        border-radius: 9999px;
+        margin-left: 8px;
+      }
+      .cortex-user-pill {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+      }
+      .cortex-user-icon {
+        color: #818cf8;
+        font-size: 13px;
+      }
+      #cortex-user-select {
+        background: transparent;
+        border: none;
+        color: var(--t1, #f3f4f6);
+        font-size: 12px;
+        font-weight: 500;
+        outline: none;
+        cursor: pointer;
+        padding-right: 4px;
+      }
+      #cortex-user-select option {
+        background: #1e1e24;
+        color: #fff;
+      }
+      .cortex-btn {
+        background: transparent;
+        border: none;
+        color: var(--t2, #9ca3af);
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+      .cortex-btn:hover {
+        color: #818cf8;
+        background: rgba(129, 140, 248, 0.15);
+      }
+      .cortex-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+        border: 1px solid rgba(129, 140, 248, 0.4);
+        color: #c7d2fe;
+        padding: 3px 10px;
+        border-radius: 9999px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .cortex-badge:hover {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.35), rgba(168, 85, 247, 0.35));
+        border-color: #818cf8;
+        box-shadow: 0 0 12px rgba(99, 102, 241, 0.4);
+      }
+      .cortex-brain-icon { font-size: 13px; }
+
+      /* Cortex Memory Drawer */
+      .cortex-drawer {
+        position: fixed;
+        top: 56px;
+        right: 16px;
+        width: 380px;
+        max-width: calc(100vw - 32px);
+        max-height: calc(100vh - 80px);
+        background: var(--bg1, #18181b);
+        border: 1px solid var(--b1, rgba(255, 255, 255, 0.15));
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        backdrop-filter: blur(16px);
+        animation: cortexSlideIn 0.25s ease-out;
+      }
+      @keyframes cortexSlideIn {
+        from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      .cortex-drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--b1, rgba(255, 255, 255, 0.1));
+        background: var(--bg2, rgba(255, 255, 255, 0.03));
+      }
+      .cortex-drawer-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--t1, #f3f4f6);
+      }
+      .cortex-tag {
+        font-size: 10px;
+        padding: 2px 6px;
+        background: rgba(99, 102, 241, 0.25);
+        border: 1px solid rgba(129, 140, 248, 0.4);
+        border-radius: 6px;
+        color: #a5b4fc;
+      }
+      .cortex-close-btn {
+        background: transparent;
+        border: none;
+        color: var(--t3, #9ca3af);
+        font-size: 20px;
+        cursor: pointer;
+        line-height: 1;
+      }
+      .cortex-close-btn:hover { color: #f87171; }
+      .cortex-drawer-body {
+        padding: 14px 18px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .cortex-card {
+        background: var(--bg2, rgba(255, 255, 255, 0.04));
+        border: 1px solid var(--b1, rgba(255, 255, 255, 0.08));
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .cortex-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--t2, #d1d5db);
+        margin-bottom: 8px;
+      }
+      .cortex-card-header i { color: #818cf8; margin-right: 4px; }
+      .cortex-icon-btn {
+        background: transparent;
+        border: none;
+        color: var(--t3, #9ca3af);
+        cursor: pointer;
+        padding: 2px 4px;
+        border-radius: 4px;
+      }
+      .cortex-icon-btn:hover { color: #818cf8; }
+      .cortex-profile-content {
+        font-size: 12px;
+        color: var(--t1, #e5e7eb);
+        line-height: 1.5;
+        background: rgba(0, 0, 0, 0.2);
+        padding: 10px;
+        border-radius: 8px;
+        border-left: 3px solid #818cf8;
+        max-height: 120px;
+        overflow-y: auto;
+      }
+      .cortex-input-row {
+        display: flex;
+        gap: 8px;
+      }
+      .cortex-input-row input {
+        flex: 1;
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid var(--b1, rgba(255, 255, 255, 0.1));
+        border-radius: 8px;
+        padding: 6px 10px;
+        font-size: 12px;
+        color: var(--t1, #fff);
+        outline: none;
+      }
+      .cortex-input-row input:focus { border-color: #818cf8; }
+      .cortex-action-btn {
+        background: #6366f1;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .cortex-action-btn:hover { background: #4f46e5; }
+      .cortex-memories-scroll {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 240px;
+        overflow-y: auto;
+      }
+      .cortex-mem-item {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-left: 3px solid #6366f1;
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: 12px;
+        color: var(--t1, #e5e7eb);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .cortex-mem-date {
+        font-size: 10px;
+        color: var(--t3, #9ca3af);
+      }
+      .cortex-empty {
+        font-size: 11px;
+        color: var(--t3, #9ca3af);
+        text-align: center;
+        padding: 16px 8px;
+      }
+      .cortex-mem-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 1px 6px;
+        background: rgba(99, 102, 241, 0.2);
+        border: 1px solid rgba(129, 140, 248, 0.35);
+        color: #c7d2fe;
+        border-radius: 4px;
+        margin-left: 4px;
+      }
     </style>
   </head>
   <body>
@@ -1960,6 +2201,25 @@
           </button>
 
           <div class="tb-title" id="tb-title"></div>
+
+          <!-- Cortex Identity & Memory Bar -->
+          <div id="cortex-identity-bar" class="cortex-bar" style="display: none;">
+            <div class="cortex-user-pill">
+              <i class="fa-solid fa-user-astronaut cortex-user-icon"></i>
+              <select id="cortex-user-select" title="Active User Identity" onchange="switchCortexUser(this.value)">
+                <option value="default">User: Default</option>
+                <option value="rahul">Rahul (Backend Lead)</option>
+                <option value="priya">Priya (DevOps Lead)</option>
+              </select>
+            </div>
+            <button id="cortex-add-user-btn" class="cortex-btn" title="Add New User Identity" onclick="promptAddCortexUser()">
+              <i class="fa-solid fa-user-plus"></i>
+            </button>
+            <button id="cortex-memory-badge" class="cortex-badge" title="Open Memory Inspector" onclick="toggleMemoryDrawer()">
+              <span class="cortex-brain-icon">🧠</span>
+              <span id="cortex-memory-count">0 memories</span>
+            </button>
+          </div>
           <div class="tb-sp"></div>
 
           <button id="sys-prompt-btn" title="System Instructions">
@@ -1993,6 +2253,56 @@
             <i class="fa-solid fa-moon"></i>
           </button>
         </header>
+
+        <!-- Cortex Memory Inspector Drawer -->
+        <div id="cortex-memory-drawer" class="cortex-drawer" style="display: none;">
+          <div class="cortex-drawer-header">
+            <div class="cortex-drawer-title">
+              <span>🧠 Cortex Memory Inspector</span>
+              <span id="cortex-bank-tag" class="cortex-tag">portllm-default</span>
+            </div>
+            <button class="cortex-close-btn" onclick="toggleMemoryDrawer()" title="Close">&times;</button>
+          </div>
+
+          <div class="cortex-drawer-body">
+            <!-- Profile Card -->
+            <div class="cortex-card">
+              <div class="cortex-card-header">
+                <div><i class="fa-solid fa-fingerprint"></i> <span>Learned User Profile</span></div>
+                <button class="cortex-icon-btn" onclick="refreshCortexProfile()" title="Refresh Profile">
+                  <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+              </div>
+              <div id="cortex-user-profile" class="cortex-profile-content">
+                Loading synthesized profile...
+              </div>
+            </div>
+
+            <!-- Quick Retain -->
+            <div class="cortex-card">
+              <div class="cortex-card-header">
+                <div><i class="fa-solid fa-plus-circle"></i> <span>Teach Memory Directly</span></div>
+              </div>
+              <div class="cortex-input-row">
+                <input type="text" id="cortex-manual-memory" placeholder="e.g. Prefers pytest and PostgreSQL on AWS..." onkeydown="if(event.key==='Enter') manualRetainCortex()" />
+                <button class="cortex-action-btn" onclick="manualRetainCortex()">Remember</button>
+              </div>
+            </div>
+
+            <!-- Stored Memories Feed -->
+            <div class="cortex-card">
+              <div class="cortex-card-header">
+                <div><i class="fa-solid fa-database"></i> <span>Persistent Memory Bank</span></div>
+                <button class="cortex-icon-btn" onclick="refreshCortexMemories()" title="Refresh Memories">
+                  <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
+              </div>
+              <div id="cortex-memories-list" class="cortex-memories-scroll">
+                <div class="cortex-empty">No memories stored in this bank yet. Start chatting to teach the model!</div>
+              </div>
+            </div>
+          </div>
+        </div>
 
       <!-- System Prompt Panel (slides down from topbar) -->
       <div id="sys-panel">
@@ -2866,6 +3176,12 @@
             }),
             signal: S.abort.signal,
           });
+          // Capture Cortex memories used count
+          const memHdr = res.headers.get('X-Cortex-Memories-Used');
+          if (memHdr) {
+            aiMsg.memoriesUsed = parseInt(memHdr, 10) || 0;
+          }
+
           if (!res.ok) {
             let errMsg = 'Ollama error ' + res.status;
             try {
@@ -3163,6 +3479,9 @@
           parts.push(formatDuration(m.elapsedMs));
         }
         if (m.stopped) parts.push('stopped');
+        if (msg.memoriesUsed && msg.memoriesUsed > 0) {
+          parts.push(`<span class="cortex-mem-tag">🧠 ${msg.memoriesUsed} recalled</span>`);
+        }
         const live = !m.done ? ' live' : '';
         return `<div class="msg-meta${live}">${parts.map(esc).join('<span class="dot"></span>')}</div>`;
       }
@@ -3415,6 +3734,177 @@
 
       // ÔöÇÔöÇ Start ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ
       init();
+
+      // ━━━ Cortex Persistent Memory Integration JavaScript ━━━
+      let cortexStatus = { enabled: false, user_id: 'default', bank_id: 'portllm-default' };
+
+      async function initCortex() {
+        try {
+          const resp = await fetch('/api/cortex/status');
+          if (!resp.ok) return;
+          const data = await resp.json();
+          cortexStatus = data;
+          if (data.enabled) {
+            const bar = document.getElementById('cortex-identity-bar');
+            if (bar) bar.style.display = 'flex';
+            const select = document.getElementById('cortex-user-select');
+            if (select && data.user_id) {
+              // Ensure option exists
+              let found = false;
+              for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === data.user_id) {
+                  select.selectedIndex = i;
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
+                const opt = document.createElement('option');
+                opt.value = data.user_id;
+                opt.textContent = `User: ${data.user_id}`;
+                select.appendChild(opt);
+                select.value = data.user_id;
+              }
+            }
+            const tag = document.getElementById('cortex-bank-tag');
+            if (tag) tag.textContent = data.bank_id || `portllm-${data.user_id}`;
+            refreshCortexMemories();
+            refreshCortexProfile();
+          }
+        } catch (e) {
+          console.debug('Cortex offline or disabled');
+        }
+      }
+
+      async function switchCortexUser(userId) {
+        if (!userId) return;
+        try {
+          const resp = await fetch('/api/cortex/user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+          });
+          const data = await resp.json();
+          if (data.success) {
+            cortexStatus.user_id = data.user_id;
+            cortexStatus.bank_id = data.bank_id;
+            const tag = document.getElementById('cortex-bank-tag');
+            if (tag) tag.textContent = data.bank_id;
+            refreshCortexMemories();
+            refreshCortexProfile();
+          }
+        } catch (e) {
+          console.error('Failed to switch Cortex user:', e);
+        }
+      }
+
+      function promptAddCortexUser() {
+        const name = prompt('Enter new user name / role (e.g. alex_sales, devops_lead):');
+        if (!name || !name.trim()) return;
+        const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+        const select = document.getElementById('cortex-user-select');
+        if (select) {
+          const opt = document.createElement('option');
+          opt.value = cleanName;
+          opt.textContent = `User: ${name.trim()}`;
+          select.appendChild(opt);
+          select.value = cleanName;
+          switchCortexUser(cleanName);
+        }
+      }
+
+      async function refreshCortexMemories() {
+        try {
+          const resp = await fetch('/api/cortex/memories');
+          if (!resp.ok) return;
+          const data = await resp.json();
+          const memories = data.memories || [];
+          const countEl = document.getElementById('cortex-memory-count');
+          if (countEl) {
+            countEl.textContent = `${memories.length} ${memories.length === 1 ? 'memory' : 'memories'}`;
+          }
+          const list = document.getElementById('cortex-memories-list');
+          if (list) {
+            if (memories.length === 0) {
+              list.innerHTML = '<div class="cortex-empty">No memories stored in this bank yet. Start chatting to teach the model!</div>';
+            } else {
+              list.innerHTML = memories.map(m => {
+                const text = typeof m === 'string' ? m : (m.content || '');
+                const date = m.created_at ? new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                return `
+                  <div class="cortex-mem-item">
+                    <div>${esc(text)}</div>
+                    ${date ? `<div class="cortex-mem-date">${date}</div>` : ''}
+                  </div>
+                `;
+              }).join('');
+            }
+          }
+        } catch (e) {
+          console.debug('Failed to refresh memories:', e);
+        }
+      }
+
+      async function refreshCortexProfile() {
+        const profEl = document.getElementById('cortex-user-profile');
+        if (profEl) profEl.textContent = 'Synthesizing identity profile...';
+        try {
+          const resp = await fetch('/api/cortex/profile');
+          if (!resp.ok) return;
+          const data = await resp.json();
+          if (profEl) {
+            if (data.profile) {
+              if (typeof renderMd === 'function') {
+                profEl.innerHTML = renderMd(data.profile);
+              } else {
+                profEl.textContent = data.profile;
+              }
+            } else {
+              profEl.innerHTML = '<span style="color: var(--t3);">No profile built yet. Keep chatting so the AI learns your habits, tech stack, and role!</span>';
+            }
+          }
+        } catch (e) {
+          if (profEl) profEl.textContent = 'Offline or profile unavailable.';
+        }
+      }
+
+      function toggleMemoryDrawer() {
+        const drawer = document.getElementById('cortex-memory-drawer');
+        if (!drawer) return;
+        if (drawer.style.display === 'none' || !drawer.style.display) {
+          drawer.style.display = 'flex';
+          refreshCortexMemories();
+          refreshCortexProfile();
+        } else {
+          drawer.style.display = 'none';
+        }
+      }
+
+      async function manualRetainCortex() {
+        const input = document.getElementById('cortex-manual-memory');
+        if (!input) return;
+        const text = input.value.trim();
+        if (!text) return;
+        try {
+          const resp = await fetch('/api/cortex/retain', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: text })
+          });
+          if (resp.ok) {
+            input.value = '';
+            refreshCortexMemories();
+            refreshCortexProfile();
+          }
+        } catch (e) {
+          console.error('Manual retain failed:', e);
+        }
+      }
+
+      // Initialize Cortex on DOM load
+      window.addEventListener('DOMContentLoaded', () => {
+        initCortex();
+      });
     </script>
   </body>
 </html>
