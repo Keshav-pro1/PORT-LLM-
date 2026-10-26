@@ -1,0 +1,9 @@
+{
+  "hindsight_enabled": true,
+  "hindsight_api_url": "https://api.hindsight.vectorize.io",
+  "hindsight_api_key": "",
+  "user_id": "default",
+  "recall_top_k": 5,
+  "auto_retain": true,
+  "timeout_seconds": 10
+}
