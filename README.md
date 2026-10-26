@@ -6,6 +6,12 @@
   Portable, Air-Gapped, Cross-Platform Local AI Environment
 </p>
 
+## 🎥 Project Demo
+
+[![Watch PortLLM Demo](https://img.youtube.com/vi/UTLnMAcXQ_4/0.jpg)](https://youtu.be/UTLnMAcXQ_4)
+
+▶️ [Watch the full demo on YouTube](https://youtu.be/UTLnMAcXQ_4)
+
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Windows%20|%20macOS%20|%20Linux%20|%20Android-blue?style=flat-square" alt="Platform" />
   <img src="https://img.shields.io/badge/Network-100%25%20Offline-green?style=flat-square" alt="Offline" />
