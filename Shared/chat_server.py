@@ -54,6 +54,34 @@ LOG_MODE_ERRORS_ONLY = "errors_only"
 LOG_MODE_ALL = "all"
 DEFAULT_LOG_MODE = LOG_MODE_ERRORS_ONLY
 
+CORTEX_USERS_FILE = os.path.join(CHATS_DIR, "cortex_users.json")
+DEFAULT_CORTEX_USERS = [
+    {"id": "default", "name": "User: Default"},
+    {"id": "rahul", "name": "Rahul (Backend Lead)"},
+    {"id": "priya", "name": "Priya (DevOps Lead)"}
+]
+
+def _load_cortex_users():
+    if os.path.exists(CORTEX_USERS_FILE):
+        try:
+            with open(CORTEX_USERS_FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, list) and len(data) > 0:
+                    return data
+        except Exception:
+            pass
+    return list(DEFAULT_CORTEX_USERS)
+
+def _save_cortex_users(users):
+    try:
+        os.makedirs(CHATS_DIR, exist_ok=True)
+        with open(CORTEX_USERS_FILE, "w", encoding="utf-8") as f:
+            json.dump(users, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception:
+        return False
+
+
 
 # Lock shared file persistence paths to avoid concurrent write corruption.
 DATA_FILE_LOCK = threading.RLock()
@@ -498,6 +526,9 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
         elif path == "/api/cortex/profile":
             self._cortex_get_profile()
 
+        elif path == "/api/cortex/users":
+            self._cortex_get_users()
+
         # Proxy Ollama API
         elif path.startswith("/ollama/"):
             self._proxy_ollama("GET")
@@ -519,6 +550,9 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
         elif path == "/api/cortex/user":
             self._cortex_set_user()
 
+        elif path == "/api/cortex/users":
+            self._cortex_add_user()
+
         elif path == "/api/cortex/retain":
             self._cortex_retain()
 
@@ -533,7 +567,9 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
 
     def do_DELETE(self):
         path = urlparse(self.path).path
-        if path.startswith("/ollama/"):
+        if path == "/api/cortex/users" or path == "/api/cortex/user":
+            self._cortex_delete_user()
+        elif path.startswith("/ollama/"):
             self._proxy_ollama("DELETE")
         else:
             self.send_response(404)
@@ -605,6 +641,84 @@ class ChatHandler(http.server.BaseHTTPRequestHandler):
             return
         res = cortex_client.retain(content, metadata={"manual": True})
         self._send_json_response({"success": True, "result": res})
+
+    def _cortex_get_users(self):
+        users = _load_cortex_users()
+        active = cortex_client.user_id if cortex_client else "default"
+        self._send_json_response({"users": users, "active_user": active})
+
+    def _cortex_add_user(self):
+        body = self._read_body()
+        try:
+            data = json.loads(body) if body else {}
+        except Exception:
+            data = {}
+        user_name = data.get("name", "").strip()
+        user_id = data.get("id", "").strip()
+        if not user_name and not user_id:
+            self._send_json_response({"error": "name or id is required"}, 400)
+            return
+        if not user_name:
+            user_name = user_id
+        if not user_id:
+            user_id = user_name.lower().replace(" ", "_")
+        clean_id = "".join(c for c in user_id.lower() if c.isalnum() or c in ("_", "-"))
+        if not clean_id:
+            clean_id = "user_" + str(int(time.time()))
+
+        users = _load_cortex_users()
+        found = False
+        for u in users:
+            if u.get("id") == clean_id:
+                u["name"] = user_name
+                found = True
+                break
+        if not found:
+            users.append({"id": clean_id, "name": user_name})
+        _save_cortex_users(users)
+
+        if cortex_client:
+            cortex_client.update_user(clean_id)
+
+        self._send_json_response({
+            "success": True,
+            "users": users,
+            "active_user": clean_id,
+            "bank_id": cortex_client.bank_id if cortex_client else f"portllm-{clean_id}"
+        })
+
+    def _cortex_delete_user(self):
+        body = self._read_body()
+        try:
+            data = json.loads(body) if body else {}
+        except Exception:
+            data = {}
+        user_id = data.get("user_id", "").strip().lower()
+        if not user_id:
+            self._send_json_response({"error": "user_id is required"}, 400)
+            return
+        if user_id == "default":
+            self._send_json_response({"error": "Cannot delete Default user"}, 400)
+            return
+        users = _load_cortex_users()
+        users = [u for u in users if u.get("id") != user_id]
+        if not any(u.get("id") == "default" for u in users):
+            users.insert(0, {"id": "default", "name": "User: Default"})
+        _save_cortex_users(users)
+
+        active = cortex_client.user_id if cortex_client else "default"
+        if active == user_id:
+            if cortex_client:
+                cortex_client.update_user("default")
+            active = "default"
+
+        self._send_json_response({
+            "success": True,
+            "users": users,
+            "active_user": active,
+            "bank_id": cortex_client.bank_id if cortex_client else f"portllm-{active}"
+        })
+
 
     def _serve_html(self):
         try:

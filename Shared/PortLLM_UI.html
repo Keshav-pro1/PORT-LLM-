@@ -2215,6 +2215,9 @@
             <button id="cortex-add-user-btn" class="cortex-btn" title="Add New User Identity" onclick="promptAddCortexUser()">
               <i class="fa-solid fa-user-plus"></i>
             </button>
+            <button id="cortex-del-user-btn" class="cortex-btn" title="Delete Active Identity" onclick="promptDeleteCortexUser()" style="display: none; color: #f87171;">
+              <i class="fa-solid fa-user-minus"></i>
+            </button>
             <button id="cortex-memory-badge" class="cortex-badge" title="Open Memory Inspector" onclick="toggleMemoryDrawer()">
               <span class="cortex-brain-icon">🧠</span>
               <span id="cortex-memory-count">0 memories</span>
@@ -3738,8 +3741,34 @@
       // ━━━ Cortex Persistent Memory Integration JavaScript ━━━
       let cortexStatus = { enabled: false, user_id: 'default', bank_id: 'portllm-default' };
 
+      function renderCortexUsers(usersList, activeId) {
+        const select = document.getElementById('cortex-user-select');
+        if (!select || !Array.isArray(usersList)) return;
+        select.innerHTML = '';
+        usersList.forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u.id;
+          opt.textContent = u.name || `User: ${u.id}`;
+          select.appendChild(opt);
+        });
+        if (activeId) select.value = activeId;
+        const delBtn = document.getElementById('cortex-del-user-btn');
+        if (delBtn) {
+          delBtn.style.display = (activeId && activeId !== 'default') ? 'inline-flex' : 'none';
+        }
+      }
+
       async function initCortex() {
         try {
+          // 1. Instant hydration from localStorage
+          let cachedUsers = null;
+          try {
+            cachedUsers = JSON.parse(localStorage.getItem('portllm_cortex_users'));
+          } catch(e) {}
+          if (Array.isArray(cachedUsers) && cachedUsers.length) {
+            renderCortexUsers(cachedUsers, localStorage.getItem('portllm_cortex_active_user') || 'default');
+          }
+
           const resp = await fetch('/api/cortex/status');
           if (!resp.ok) return;
           const data = await resp.json();
@@ -3747,25 +3776,22 @@
           if (data.enabled) {
             const bar = document.getElementById('cortex-identity-bar');
             if (bar) bar.style.display = 'flex';
-            const select = document.getElementById('cortex-user-select');
-            if (select && data.user_id) {
-              // Ensure option exists
-              let found = false;
-              for (let i = 0; i < select.options.length; i++) {
-                if (select.options[i].value === data.user_id) {
-                  select.selectedIndex = i;
-                  found = true;
-                  break;
+
+            // 2. Fetch persistent users list from server
+            try {
+              const uResp = await fetch('/api/cortex/users');
+              if (uResp.ok) {
+                const uData = await uResp.json();
+                if (Array.isArray(uData.users)) {
+                  localStorage.setItem('portllm_cortex_users', JSON.stringify(uData.users));
+                  localStorage.setItem('portllm_cortex_active_user', data.user_id || uData.active_user);
+                  renderCortexUsers(uData.users, data.user_id || uData.active_user);
                 }
               }
-              if (!found) {
-                const opt = document.createElement('option');
-                opt.value = data.user_id;
-                opt.textContent = `User: ${data.user_id}`;
-                select.appendChild(opt);
-                select.value = data.user_id;
-              }
+            } catch(e) {
+              console.debug('Failed to fetch cortex users list', e);
             }
+
             const tag = document.getElementById('cortex-bank-tag');
             if (tag) tag.textContent = data.bank_id || `portllm-${data.user_id}`;
             refreshCortexMemories();
@@ -3788,6 +3814,13 @@
           if (data.success) {
             cortexStatus.user_id = data.user_id;
             cortexStatus.bank_id = data.bank_id;
+            localStorage.setItem('portllm_cortex_active_user', data.user_id);
+            const select = document.getElementById('cortex-user-select');
+            if (select) select.value = data.user_id;
+            const delBtn = document.getElementById('cortex-del-user-btn');
+            if (delBtn) {
+              delBtn.style.display = (data.user_id && data.user_id !== 'default') ? 'inline-flex' : 'none';
+            }
             const tag = document.getElementById('cortex-bank-tag');
             if (tag) tag.textContent = data.bank_id;
             refreshCortexMemories();
@@ -3798,18 +3831,65 @@
         }
       }
 
-      function promptAddCortexUser() {
-        const name = prompt('Enter new user name / role (e.g. alex_sales, devops_lead):');
+      async function promptAddCortexUser() {
+        const name = prompt('Enter new user name / role (e.g. Alex (Sales Lead), Dr. Mehta (Medical)):');
         if (!name || !name.trim()) return;
         const cleanName = name.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+        try {
+          const resp = await fetch('/api/cortex/users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: cleanName, name: name.trim() })
+          });
+          const data = await resp.json();
+          if (data.success && Array.isArray(data.users)) {
+            localStorage.setItem('portllm_cortex_users', JSON.stringify(data.users));
+            localStorage.setItem('portllm_cortex_active_user', data.active_user);
+            renderCortexUsers(data.users, data.active_user);
+            cortexStatus.user_id = data.active_user;
+            cortexStatus.bank_id = data.bank_id;
+            const tag = document.getElementById('cortex-bank-tag');
+            if (tag) tag.textContent = data.bank_id;
+            refreshCortexMemories();
+            refreshCortexProfile();
+          }
+        } catch(e) {
+          console.error('Failed to add cortex user:', e);
+        }
+      }
+
+      async function promptDeleteCortexUser() {
         const select = document.getElementById('cortex-user-select');
-        if (select) {
-          const opt = document.createElement('option');
-          opt.value = cleanName;
-          opt.textContent = `User: ${name.trim()}`;
-          select.appendChild(opt);
-          select.value = cleanName;
-          switchCortexUser(cleanName);
+        if (!select || !select.value) return;
+        const userId = select.value;
+        if (userId === 'default') {
+          alert('Cannot delete the Default workspace.');
+          return;
+        }
+        const selectedText = select.options[select.selectedIndex]?.text || userId;
+        if (!confirm(`Are you sure you want to delete identity "${selectedText}"?\n(Stored memories in Hindsight Cloud will remain safe)`)) {
+          return;
+        }
+        try {
+          const resp = await fetch('/api/cortex/users', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ user_id: userId })
+          });
+          const data = await resp.json();
+          if (data.success && Array.isArray(data.users)) {
+            localStorage.setItem('portllm_cortex_users', JSON.stringify(data.users));
+            localStorage.setItem('portllm_cortex_active_user', data.active_user);
+            renderCortexUsers(data.users, data.active_user);
+            cortexStatus.user_id = data.active_user;
+            cortexStatus.bank_id = data.bank_id;
+            const tag = document.getElementById('cortex-bank-tag');
+            if (tag) tag.textContent = data.bank_id;
+            refreshCortexMemories();
+            refreshCortexProfile();
+          }
+        } catch(e) {
+          console.error('Failed to delete cortex user:', e);
         }
       }
 
